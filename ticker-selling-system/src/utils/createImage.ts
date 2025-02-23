@@ -1,77 +1,81 @@
+import { createHash } from 'crypto';
 import QRCode from 'qrcode';
 import sharp from 'sharp';
+import fs from 'fs';
+import path from 'path';
 
-async function createQRCodeComposite(
-  id: string,
-  hash: string,
-  backgroundImagePath: string,
-  outputImagePath: string,
-  transport: boolean = false
-): Promise<void> {
+// Función para generar el hash usando SHA-256
+function generateHash(entradaId: number): string {
+  return createHash('sha256')
+    .update(`andamodespechao${entradaId}`)
+    .digest('hex');
+}
+
+async function generateQR(entradaId: number): Promise<void> {
   try {
-    // Tamaño deseado para el QR.
-    const qrSize = 1000;
-    const color = transport ? '#124e9e' : '#8B0000';
+    // Genera el hash para el ID de la entrada
+    const hashEntrada = generateHash(entradaId);
 
-    // Genera el código QR en formato PNG con tamaño 100 y color rojo vino, utilizando el hash.
-    const qrBuffer = await QRCode.toBuffer(hash, {
+    // Construye el string de información a incluir en el QR
+    const info = `ID: ${entradaId}\nEvento: andamo_despechao\nHash: ${hashEntrada}`;
+
+    // Genera el QR con las opciones deseadas (versión, corrección de error, colores, etc.)
+    // Se usa un ancho inicial (por ejemplo, 500) para luego redimensionar según el fondo.
+    const qrBuffer = await QRCode.toBuffer(info, {
+      errorCorrectionLevel: 'H',
       type: 'png',
-      width: qrSize,
+      width: 500,
       color: {
-        dark: color,  // Color rojo vino para los módulos.
-        light: '#ffffff', // Fondo blanco.
+        dark: '#a02828',  // Color rojo vino para los módulos
+        light: '#ffffff', // Fondo blanco
       },
     });
 
-    // Carga la imagen de fondo con Sharp.
-    const background = sharp(backgroundImagePath);
+    // Carga la imagen de fondo (se asume que "fondo.png" se encuentra en el directorio actual)
+    const backgroundPath = path.resolve('./background.png');
+    const background = sharp(backgroundPath);
     const metadata = await background.metadata();
-    const bgWidth = metadata.width || 0;
-    const bgHeight = metadata.height || 0;
+    if (!metadata.width || !metadata.height) {
+      throw new Error('No se pudieron leer las dimensiones de la imagen de fondo.');
+    }
+    const bgWidth = metadata.width;
+    const bgHeight = metadata.height;
 
-    // Calcula la posición para centrar el QR en la imagen de fondo.
+    // Calcula el tamaño del QR para que sea grande en relación al fondo
+    // Se toma el mínimo de ancho y alto del fondo y se divide por 1.2 para ajustar
+    const qrSize = Math.floor(Math.min(bgWidth, bgHeight) / 1.2);
+
+    // Redimensiona el QR al tamaño calculado
+    const qrResizedBuffer = await sharp(qrBuffer)
+      .resize(qrSize, qrSize)
+      .toBuffer();
+
+    // Calcula la posición para centrar el QR en la imagen de fondo
     const left = Math.floor((bgWidth - qrSize) / 2);
     const top = Math.floor((bgHeight - qrSize) / 2);
 
-    // Definir el tamaño del texto y del contenedor SVG.
-    const fontSize = 52;
-    const textHeight = 80; // Aumentado para que el texto se muestre completo.
-    const margin = 10; // Margen entre el texto y el QR.
+    // Compone el QR sobre la imagen de fondo
+    const finalImageBuffer = await background
+      .composite([{ input: qrResizedBuffer, top: top, left: left }])
+      .png()
+      .toBuffer();
 
-    // Crea un SVG para el texto del ID con font-size 52.
-    const svgText = `
-      <svg width="${qrSize}" height="${textHeight}">
-        <style>
-          .title { fill: #000; font-size: ${fontSize}px; font-family: Arial, sans-serif; }
-        </style>
-        <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" class="title">
-          ${id}
-        </text>
-      </svg>
-    `;
-    const textBuffer = Buffer.from(svgText);
+    // Asegura que exista el directorio "entradas_qr"
+    const outputDir = path.resolve('entradas_qr');
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir);
+    }
+    const outputPath = path.join(outputDir, `${entradaId}.png`);
 
-    // Calcula la posición para colocar el texto justo arriba del QR.
-    const textTop = top - textHeight - margin;
-
-    // Compone la imagen: coloca el QR y el texto sobre la imagen de fondo.
-    await background
-      .composite([
-        { input: qrBuffer, top: top, left: left },
-        { input: textBuffer, top: textTop > 0 ? textTop : 0, left: left },
-      ])
-      .toFile(outputImagePath);
-
-    console.log(`Imagen compuesta guardada en: ${outputImagePath}`);
+    // Guarda la imagen compuesta en el directorio de salida
+    await sharp(finalImageBuffer).toFile(outputPath);
+    console.log(`Código QR generado y guardado en: ${outputPath}`);
   } catch (error) {
-    console.error('Error al crear la imagen compuesta:', error);
+    console.error('Error al generar el código QR compuesto:', error);
   }
 }
 
 // Ejemplo de uso:
-const hash = "66b030d4c688ace4db79efded3d2ef15f5f459051dd405abd12521c7bd08c855";
-const id = "9A8AEJ";
-const backgroundImagePath = "./background.png"; // Ruta de la imagen de fondo
-const outputImagePath = "./composite.png";        // Ruta de salida
-
-createQRCodeComposite(id, hash, backgroundImagePath, outputImagePath, true);
+// Supón que obtienes el id de la siguiente forma (por ejemplo, de una consulta a base de datos)
+const entradaId = 1; // Aquí deberías asignar el nuevo ID (max id + 1)
+generateQR(entradaId).catch(console.error);

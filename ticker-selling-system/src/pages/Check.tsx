@@ -1,36 +1,38 @@
-import React, { useState } from 'react'
-import QrReader from 'modern-react-qr-reader'
+import React, { useState } from 'react';
+import QrReader from 'modern-react-qr-reader';
 
 export default function Check() {
-  // Definimos un estado que guarda un objeto con fakeID y hash.
-  const [qrData, setQrData] = useState({ fakeID: '', hash: '' })
+  const [qrData, setQrData] = useState({ id: '', hash: '' });
 
-  const handleScan = (result) => {
+  const handleScan = (result: string | null) => {
     if (result) {
-      // Extraemos el Fake ID
-      const fakeIDMatch = result.match(/Fake ID:\s*([^\s]+)/)
-      // Extraemos el Hash
-      const hashMatch = result.match(/Hash:\s*([0-9a-fA-F]+)/)
+      console.log("Resultado completo del QR:", result);
+      
+      // Intenta extraer el ID y el Hash
+      const idMatch = result.match(/ID:\s*([^\s]+)/);
+      const hashMatch = result.match(/Hash:\s*([0-9a-fA-F]+)/);
+      
+      console.log("Coincidencia ID:", idMatch);
+      console.log("Coincidencia Hash:", hashMatch);
+      
+      const id = idMatch ? idMatch[1] : '';
+      const hash = hashMatch ? hashMatch[1] : '';
 
-      // Asignamos los valores (si se encontraron) al estado.
-      const fakeID = fakeIDMatch ? fakeIDMatch[1] : ''
-      const hash = hashMatch ? hashMatch[1] : ''
-
-      setQrData({ fakeID, hash })
+      setQrData({ id, hash });
     }
-  }
+  };
 
-  const handleError = (error) => {
-    console.error(error)
-  }
+  const handleError = (error: any) => {
+    console.error("Error del QR Reader:", error);
+  };
 
   const handleMarkAsUsed = () => {
-    console.log('Mark as Used clicked')
-  }
+    console.log('Mark as Used clicked', qrData);
+  };
 
   const handleExit = () => {
-    console.log('Exit clicked')
-  }
+    console.log('Exit clicked');
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
@@ -45,11 +47,11 @@ export default function Check() {
             videoStyle={{ border: 'none' }}
           />
         </div>
-        {(qrData.fakeID || qrData.hash) && (
+        {(qrData.id || qrData.hash) && (
           <div className="mb-4 text-center">
-            {qrData.fakeID && (
+            {qrData.id && (
               <p>
-                Fake ID: <strong>{qrData.fakeID}</strong>
+                ID: <strong>{qrData.id}</strong>
               </p>
             )}
             {qrData.hash && (
@@ -63,7 +65,7 @@ export default function Check() {
           <button
             type="button"
             onClick={handleMarkAsUsed}
-            disabled={!qrData.fakeID || !qrData.hash}
+            disabled={!qrData.id || !qrData.hash}
             className="text-white bg-gray-800 hover:bg-gray-900 font-medium rounded-full text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700"
           >
             Mark as Used
@@ -78,5 +80,5 @@ export default function Check() {
         </div>
       </div>
     </div>
-  )
+  );
 }
