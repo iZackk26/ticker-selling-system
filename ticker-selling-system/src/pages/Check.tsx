@@ -2,17 +2,24 @@ import React, { useState } from 'react'
 import QrReader from 'modern-react-qr-reader'
 
 export default function Check() {
-  const [data, setData] = useState('')
+  // Definimos un estado que guarda un objeto con fakeID y hash.
+  const [qrData, setQrData] = useState({ fakeID: '', hash: '' })
 
   const handleScan = (result) => {
     if (result) {
-      // Utilizamos una expresión regular para extraer el valor después de "Fake ID:"
-      const match = result.match(/Fake ID:\s*([^\s]+)/)
-      if (match && match[1]) {
-        setData(match[1])
-      }
+      // Extraemos el Fake ID
+      const fakeIDMatch = result.match(/Fake ID:\s*([^\s]+)/)
+      // Extraemos el Hash
+      const hashMatch = result.match(/Hash:\s*([0-9a-fA-F]+)/)
+
+      // Asignamos los valores (si se encontraron) al estado.
+      const fakeID = fakeIDMatch ? fakeIDMatch[1] : ''
+      const hash = hashMatch ? hashMatch[1] : ''
+
+      setQrData({ fakeID, hash })
     }
   }
+
   const handleError = (error) => {
     console.error(error)
   }
@@ -31,23 +38,32 @@ export default function Check() {
         <h1 className="text-2xl font-bold mb-4 text-center">QR Code Scanner</h1>
         <div className="mb-4 overflow-hidden rounded-lg">
           <QrReader
-            onScan={handleScan} // Se utiliza onScan en lugar de onResult
+            onScan={handleScan}
             onError={handleError}
             constraints={{ facingMode: 'environment' }}
             containerStyle={{ width: '100%', border: 'none' }}
             videoStyle={{ border: 'none' }}
           />
         </div>
-        {data && (
-          <p className="mb-4 text-center">
-            Scanned Data: <strong>{data}</strong>
-          </p>
+        {(qrData.fakeID || qrData.hash) && (
+          <div className="mb-4 text-center">
+            {qrData.fakeID && (
+              <p>
+                Fake ID: <strong>{qrData.fakeID}</strong>
+              </p>
+            )}
+            {qrData.hash && (
+              <p>
+                Hash: <strong>{qrData.hash}</strong>
+              </p>
+            )}
+          </div>
         )}
         <div className="flex justify-between">
           <button
             type="button"
             onClick={handleMarkAsUsed}
-            disabled={!data}
+            disabled={!qrData.fakeID || !qrData.hash}
             className="text-white bg-gray-800 hover:bg-gray-900 font-medium rounded-full text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700"
           >
             Mark as Used
