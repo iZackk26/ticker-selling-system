@@ -4,15 +4,17 @@ import sharp from 'sharp';
 async function createQRCodeComposite(
   hash: string,
   backgroundImagePath: string,
-  outputImagePath: string
+  outputImagePath: string,
+  transport: boolean = false
 ): Promise<void> {
   try {
+    const color = transport ? '#4169E1' : '#8B0000';
     // Genera el código QR como buffer PNG con un ancho (y alto) de 250 píxeles.
     const qrBuffer = await QRCode.toBuffer(hash, {
       type: 'png',
       width: 700,
       color: {
-        dark: '#8B0000',  // Color rojo vino para los módulos del QR.
+        dark: color,  // Color rojo vino para los módulos del QR.
         light: '#ffffff', // Color de fondo del QR.
       },
     });
@@ -48,4 +50,4 @@ const hash = "66b030d4c688ace4db79efded3d2ef15f5f459051dd405abd12521c7bd08c855";
 const backgroundImagePath = "./background.png"; // Ruta de la imagen de fondo
 const outputImagePath = "./composite.png";        // Ruta donde se guardará la imagen resultante
 
-createQRCodeComposite(hash, backgroundImagePath, outputImagePath);
+createQRCodeComposite(hash, backgroundImagePath, outputImagePath, true);
