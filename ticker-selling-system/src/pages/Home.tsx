@@ -19,7 +19,7 @@ export default function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-lg">
           <a
             href="/check"
-            className="flex items-center justify-center w-full text-white bg-red-600 hover:bg-yellow-600 focus:outline-none focus:ring-4 focus:ring-yellow-300 font-medium rounded-full text-lg px-6 py-3"
+            className="flex items-center justify-center w-full text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-yellow-300 font-medium rounded-full text-lg px-6 py-3"
           >
             <FaTicketAlt className="mr-2" /> Check Ticket
           </a>
@@ -31,7 +31,7 @@ export default function Home() {
           </a>
           <a
             href="/available"
-            className="flex items-center justify-center w-full text-white bg-red-600 hover:bg-gray-200 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-full text-lg px-6 py-3"
+            className="flex items-center justify-center w-full text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-full text-lg px-6 py-3"
           >
             <FaEye className="mr-2" /> View Tickets
           </a>
