@@ -42,7 +42,7 @@ const DynamicBackground: React.FC = () => {
       }
 
       draw() {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+        ctx.fillStyle = "rgba(255, 107, 107, 0.7)"; // Rojo pastel con transparencia
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.closePath();
@@ -60,7 +60,7 @@ const DynamicBackground: React.FC = () => {
     }
 
     function animate() {
-      ctx.fillStyle = "black"; // Fondo negro
+      ctx.fillStyle = "#f8f8f8"; // Fondo blanco pastel
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       particles.forEach((p) => {
