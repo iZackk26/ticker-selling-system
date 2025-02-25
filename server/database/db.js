@@ -1,21 +1,25 @@
 import dotenv from 'dotenv';
-import pg from 'pg';
+import sqlite3 from 'sqlite3';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Obtener la ruta del archivo actual (equivalente a __dirname en ES modules)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
-const { Pool } = pg;
+// Usar una ruta local para la base de datos
+const dbPath = path.resolve(__dirname, 'database.sqlite');
 
-const isProduction = process.env.NODE_ENV === 'production';
+console.log('Intentando conectar a SQLite...');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ...(isProduction && { ssl: { rejectUnauthorized: false } }),
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error('Error de conexión:', err);
+  } else {
+    console.log('Conectado a SQLite');
+  }
 });
 
-console.log('Intentando conectar a PostgreSQL...');
-
-pool.connect()
-  .then(() => console.log('Conectado a PostgreSQL'))
-  .catch(err => console.error('Error de conexión:', err));
-
-export default pool;
+export default db;

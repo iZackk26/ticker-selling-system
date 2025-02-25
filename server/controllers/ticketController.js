@@ -1,19 +1,32 @@
-import pool from '../database/db.js';
+import db from '../database/db.js';
 
 export const canjearEntrada = async (req, res) => {
     const { numero_entrada } = req.params;
 
     try {
-        const result = await pool.query(
-            'UPDATE entrada SET canjeada = true WHERE numero_entrada = $1 RETURNING *',
-            [numero_entrada]
-        );
+        const result = await new Promise((resolve, reject) => {
+            db.run(
+                'UPDATE entrada SET canjeada = true WHERE numero_entrada = ?',
+                [numero_entrada],
+                function (err) {
+                    if (err) reject(err);
+                    resolve(this.changes);
+                }
+            );
+        });
 
-        if (result.rowCount === 0) {
+        if (result === 0) {
             return res.status(404).json({ message: 'Entrada no encontrada' });
         }
 
-        res.json({ message: 'Entrada canjeada exitosamente', entrada: result.rows[0] });
+        const entrada = await new Promise((resolve, reject) => {
+            db.get('SELECT * FROM entrada WHERE numero_entrada = ?', [numero_entrada], (err, row) => {
+                if (err) reject(err);
+                resolve(row);
+            });
+        });
+
+        res.json({ message: 'Entrada canjeada exitosamente', entrada });
     } catch (error) {
         console.error('Error al canjear entrada:', error);
         res.status(500).json({ error: 'Error en el servidor' });
@@ -23,8 +36,14 @@ export const canjearEntrada = async (req, res) => {
 // 2. Obtener todas las entradas
 export const obtenerEntradas = async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM entrada');
-        res.json(result.rows);
+        const entradas = await new Promise((resolve, reject) => {
+            db.all('SELECT * FROM entrada', [], (err, rows) => {
+                if (err) reject(err);
+                resolve(rows);
+            });
+        });
+
+        res.json(entradas);
     } catch (error) {
         console.error('Error al obtener las entradas:', error);
         res.status(500).json({ error: 'Error en el servidor' });
@@ -36,22 +55,40 @@ export const asignarUsuarioAEntrada = async (req, res) => {
     const { entrada_id, user_id } = req.body;
 
     try {
-        const entrada = await pool.query('SELECT * FROM entrada WHERE id = $1', [entrada_id]);
-        if (entrada.rowCount === 0) {
+        const entrada = await new Promise((resolve, reject) => {
+            db.get('SELECT * FROM entrada WHERE id = ?', [entrada_id], (err, row) => {
+                if (err) reject(err);
+                resolve(row);
+            });
+        });
+
+        if (!entrada) {
             return res.status(404).json({ message: 'Entrada no encontrada' });
         }
 
-        const usuario = await pool.query('SELECT * FROM "user" WHERE id = $1', [user_id]);
-        if (usuario.rowCount === 0) {
+        const usuario = await new Promise((resolve, reject) => {
+            db.get('SELECT * FROM "user" WHERE id = ?', [user_id], (err, row) => {
+                if (err) reject(err);
+                resolve(row);
+            });
+        });
+
+        if (!usuario) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
 
-        const result = await pool.query(
-            'UPDATE entrada SET user_id = $1 WHERE id = $2 RETURNING *',
-            [user_id, entrada_id]
-        );
+        const result = await new Promise((resolve, reject) => {
+            db.run(
+                'UPDATE entrada SET user_id = ? WHERE id = ?',
+                [user_id, entrada_id],
+                function (err) {
+                    if (err) reject(err);
+                    resolve(this.changes);
+                }
+            );
+        });
 
-        res.json({ message: 'Usuario asignado a la entrada', entrada: result.rows[0] });
+        res.json({ message: 'Usuario asignado a la entrada', entrada });
     } catch (error) {
         console.error('Error al asignar usuario a la entrada:', error);
         res.status(500).json({ error: 'Error en el servidor' });
@@ -60,38 +97,55 @@ export const asignarUsuarioAEntrada = async (req, res) => {
 
 
 export const asignarEntradaAUsuario = async (req, res) => {
-    const { carnet, tipo } = req.body; // 📌 Recibe el carnet del usuario y el tipo de entrada
+    const { carnet, tipo } = req.body;
 
     try {
-        const entradaDisponible = await pool.query(
-            'SELECT id, numero_entrada FROM entrada WHERE user_id IS NULL AND tipo = $1 LIMIT 1',
-            [tipo]
-        );
+        const entradaDisponible = await new Promise((resolve, reject) => {
+            db.get(
+                'SELECT id, numero_entrada FROM entrada WHERE user_id IS NULL AND tipo = ? LIMIT 1',
+                [tipo],
+                (err, row) => {
+                    if (err) reject(err);
+                    resolve(row);
+                }
+            );
+        });
 
-        if (entradaDisponible.rowCount === 0) {
+        if (!entradaDisponible) {
             return res.status(404).json({ message: `No hay entradas disponibles para el tipo: ${tipo}` });
         }
 
-        const { id: entradaId, numero_entrada } = entradaDisponible.rows[0];
+        const { id: entradaId, numero_entrada } = entradaDisponible;
 
-        const nuevoUsuario = await pool.query(
-            'INSERT INTO "user" (carnet) VALUES ($1) RETURNING id',
-            [carnet]
-        );
+        const nuevoUsuario = await new Promise((resolve, reject) => {
+            db.run(
+                'INSERT INTO "user" (carnet) VALUES (?)',
+                [carnet],
+                function (err) {
+                    if (err) reject(err);
+                    resolve(this.lastID);
+                }
+            );
+        });
 
-        const userId = nuevoUsuario.rows[0].id;
+        const userId = nuevoUsuario;
 
-        await pool.query(
-            'UPDATE entrada SET user_id = $1 WHERE id = $2',
-            [userId, entradaId]
-        );
+        await new Promise((resolve, reject) => {
+            db.run(
+                'UPDATE entrada SET user_id = ? WHERE id = ?',
+                [userId, entradaId],
+                function (err) {
+                    if (err) reject(err);
+                    resolve();
+                }
+            );
+        });
 
         res.json({
             message: 'Usuario registrado y entrada asignada',
             numero_entrada,
             tipo
         });
-
     } catch (error) {
         console.error('Error al asignar entrada:', error);
         res.status(500).json({ error: 'Error en el servidor' });

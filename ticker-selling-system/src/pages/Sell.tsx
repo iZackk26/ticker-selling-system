@@ -4,11 +4,7 @@ import * as z from "zod";
 
 const formSchema = z.object({
   tipo: z.enum(["con_transporte", "sin_transporte"]),
-  carnet: z.string().min(5, "El carnet debe tener al menos 5 caracteres"),
-  fecha_entrada: z.string().min(1, "La fecha es obligatoria"),
-  hora_entrada: z.string().min(1, "La hora es obligatoria"),
-  ubicacion: z.string().min(1, "La ubicación es obligatoria"),
-  numero_entradas: z.number().min(1, "El número de entradas debe ser al menos 1"),
+  nombre: z.string().min(1, "El nombre es obligatorio"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -23,10 +19,7 @@ export default function ComplexForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       tipo: "sin_transporte",
-      numero_entradas: 1,
-      ubicacion: "El vago",
-      hora_entrada: "20:00",
-      fecha_entrada: "2025-03-06",
+      nombre: "iZaack",
     },
   });
 
@@ -72,75 +65,18 @@ export default function ComplexForm() {
           />
         </div>
 
-        {/* Carnet */}
-        <div>
-          <label htmlFor="carnet" className="block text-sm font-medium text-gray-700">
-            Carnet
-          </label>
-          <input
-            id="carnet"
-            {...register("carnet")}
-            className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-          {errors.carnet && <p className="text-red-500 text-sm mt-1">{errors.carnet.message}</p>}
-        </div>
 
-        {/* Fecha de Entrada */}
+        {/* Nombre */}
         <div>
-          <label htmlFor="fecha_entrada" className="block text-sm font-medium text-gray-700">
-            Fecha de Entrada
+          <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
+            Nombre
           </label>
           <input
-            id="fecha_entrada"
-            type="date"
-            {...register("fecha_entrada")}
+            id="nombre"
+            {...register("nombre")}
             className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
-          {errors.fecha_entrada && <p className="text-red-500 text-sm mt-1">{errors.fecha_entrada.message}</p>}
-        </div>
-
-        {/* Hora de Entrada */}
-        <div>
-          <label htmlFor="hora_entrada" className="block text-sm font-medium text-gray-700">
-            Hora de Entrada
-          </label>
-          <input
-            id="hora_entrada"
-            type="time"
-            {...register("hora_entrada")}
-            className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-          {errors.hora_entrada && <p className="text-red-500 text-sm mt-1">{errors.hora_entrada.message}</p>}
-        </div>
-
-        {/* Ubicación */}
-        <div>
-          <label htmlFor="ubicacion" className="block text-sm font-medium text-gray-700">
-            Ubicación
-          </label>
-          <input
-            id="ubicacion"
-            {...register("ubicacion")}
-            className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-          {errors.ubicacion && <p className="text-red-500 text-sm mt-1">{errors.ubicacion.message}</p>}
-        </div>
-
-        {/* Número de Entradas */}
-        <div>
-          <label htmlFor="numero_entradas" className="block text-sm font-medium text-gray-700">
-            Número de Entradas
-          </label>
-          <input
-            id="numero_entradas"
-            type="number"
-            min="1"
-            {...register("numero_entradas", { valueAsNumber: true })}
-            className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-          {errors.numero_entradas && (
-            <p className="text-red-500 text-sm mt-1">{errors.numero_entradas.message}</p>
-          )}
+          {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre.message}</p>}
         </div>
 
         <button
