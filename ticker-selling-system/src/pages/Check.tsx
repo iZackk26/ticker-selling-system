@@ -4,30 +4,76 @@ import QrReader from 'modern-react-qr-reader';
 export default function Check() {
   const [qrData, setQrData] = useState({ id: '', hash: '' });
 
-  const handleScan = (result: string | null) => {
+  const handleScan = async (result: string | null) => {
     if (result) {
       console.log("Resultado completo del QR:", result);
-      
+
       // Intenta extraer el ID y el Hash
       const idMatch = result.match(/ID:\s*([^\s]+)/);
       const hashMatch = result.match(/Hash:\s*([0-9a-fA-F]+)/);
-      
+
       console.log("Coincidencia ID:", idMatch);
       console.log("Coincidencia Hash:", hashMatch);
-      
+
       const id = idMatch ? idMatch[1] : '';
       const hash = hashMatch ? hashMatch[1] : '';
 
+      // Establecer los datos del QR en el estado
       setQrData({ id, hash });
+
+      // Realizar la solicitud al endpoint de validación
+      try {
+        console.log(`http://localhost:8000/validate_qr_web/?fake_id=${id}&hash=${hash}`)
+        const response = await fetch(`http://localhost:8000/validate_qr_web/?fake_id=${id}&hash=${hash}`);
+        console.log(response);
+        const data = await response.json();
+
+        if (response.ok) {
+          // Mostrar la respuesta de validación si la entrada es válida
+          console.log("Respuesta de validación:", data);
+          alert(`Entrada válida: ${JSON.stringify(data)}`);
+        } else {
+          // Mostrar el error si la entrada no es válida
+          alert(`Error: ${data.detail}`);
+        }
+      } catch (error) {
+        console.error("Error al validar el QR:", error);
+        alert("Hubo un problema al intentar validar la entrada.");
+      }
     }
   };
+
 
   const handleError = (error: any) => {
     console.error("Error del QR Reader:", error);
   };
 
-  const handleMarkAsUsed = () => {
+  const handleMarkAsUsed = async () => {
+    if (!qrData || !qrData.id || !qrData.hash) {
+      console.log('No QR data available');
+      return;
+    }
+
     console.log('Mark as Used clicked', qrData);
+
+    // Hacer la solicitud al backend
+    try {
+      const response = await fetch(`http://localhost:8000/mark_ticket_used/?fake_id=${qrData.id}&hash=${qrData.hash}`);
+
+      // Verificar la respuesta
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Entrada marcada como usada:', data);
+        alert('Entrada marcada como usada');
+      } else {
+        const errorData = await response.json();
+        console.error('Error al marcar la entrada:', errorData);
+        alert(`Error: ${errorData.detail}`);
+      }
+    } catch (error) {
+      console.error('Error de conexión con el servidor:', error);
+      alert('Hubo un problema al intentar marcar la entrada como usada');
+    }
   };
 
   const handleExit = () => {

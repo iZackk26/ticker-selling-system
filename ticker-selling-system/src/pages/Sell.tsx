@@ -1,4 +1,5 @@
 import { useForm, Controller } from "react-hook-form";
+import {useState} from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
@@ -8,6 +9,8 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+
 
 export default function ComplexForm() {
   const {
@@ -23,10 +26,33 @@ export default function ComplexForm() {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
-    console.log(data);
-    alert("Formulario enviado");
+
+  const [qrImagePath, setQrImagePath] = useState<string | null>(null);
+
+  const onSubmit = async (data: FormValues) => {
+    console.log("Datos del formulario:", data);
+
+    // Definir el tipo de entrada según la opción seleccionada
+    const tipoEntrada = data.tipo === "con_transporte" ? "2" : "1";
+
+    try {
+      // Hacer la solicitud al backend para generar el QR
+      const response = await fetch(`http://localhost:8000/generate_qr/?tipo_entrada=${tipoEntrada}`);
+      const responseData = await response.json();
+
+      if (response.ok) {
+        console.log("QR generado con éxito:", responseData);
+        setQrImagePath(responseData.qr_image_path); // Guarda la ruta del QR recibido
+      } else {
+        console.error("Error al generar el QR:", responseData.detail);
+        alert(`Error al generar el QR: ${responseData.detail}`);
+      }
+    } catch (error) {
+      console.error("Error en la solicitud:", error);
+      alert("Hubo un problema al generar el QR");
+    }
   };
+
 
   return (
     <div className="max-w-xl mx-auto bg-white shadow rounded p-6">
